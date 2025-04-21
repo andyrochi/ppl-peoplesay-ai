@@ -1,0 +1,6 @@
+.venv/
+.env
+misc/
+test_sql.py
+peoplesay.db
+*__pycache__/
