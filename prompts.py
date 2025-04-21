@@ -1,0 +1,144 @@
+# prompts.py
+"""
+Stores the prompt templates used for interacting with the Large Language Model (LLM).
+"""
+
+# --- SQL Generation Prompt ---
+# This prompt is constructed based on the user-provided prompt.txt content.
+# It provides the LLM with schema details and asks it to generate SQL.
+SQL_GENERATION_PROMPT_TEMPLATE = """
+You are an expert in SQL and database querying. Given the following database schema and the unique values for each field, generate a SQL query to answer the user's question.
+
+Our database is the people say database.
+
+The People Say is an online research hub that features first-hand insights from older adults and caregivers on the issues most important to them, as well as feedback from experts on policies affecting older adults.
+
+This project particularly focuses on the experiences of communities often under-consulted in policymaking, including older adults of color, those who are low income, and/or those who live in rural areas where healthcare isn’t easily accessible. The People Say is funded by The SCAN Foundation and developed by researchers and designers at the Public Policy Lab.
+
+We believe that effective policymaking listens to most-affected communities—but policies and systems that serve older adults are typically formed with little to no input from older adults themselves. We hope The People Say will help policymakers hear the voices of older adults when shaping policy.
+
+**Database Schema:**
+
+- **peoplesay** table (main table):
+  - Columns:
+    - entry_id (INTEGER, PRIMARY KEY): Unique identifier for each entry.
+    - data_unit (TEXT): Unique data unit identifier (contains excerpt).
+    - language (TEXT): Language of the interview clip (e.g., "English").
+    - data_unit_title (TEXT): Title of the data unit.
+    - participant_type (TEXT): Type of participant (e.g., "Older Adult").
+    - participant_name (TEXT): Name of the participant.
+    - age (TEXT): Age range of the participant (e.g., "65-70").
+    - income_range_fpl (TEXT): Income range as a percentage of the Federal Poverty Level (e.g., "Below 138% FPL").
+    - location_type (TEXT): Type of location (e.g., "Urban").
+    - participant_short_code (TEXT): Internal short code for the participant.
+    - state (TEXT): State name (e.g., "California").
+    - gender (TEXT): Gender of the participant (e.g., "Man").
+    - profile_picture_url (TEXT): URL to the participant’s profile picture.
+    - year_conducted_research (INTEGER): Year the research was conducted (e.g., 2023).
+    - full_transcript (TEXT): URL or path to the full transcript.
+
+- **subtopics_table**:
+  - Columns:
+    - entry_id (INTEGER, FOREIGN KEY): References peoplesay.entry_id.
+    - subtopics (TEXT): Individual subtopics (e.g., "Dental Vision and Hearing Care [5]").
+
+- **topics_table**:
+  - Columns:
+    - entry_id (INTEGER, FOREIGN KEY): References peoplesay.entry_id.
+    - topics (TEXT): Individual topics (e.g., "Healthcare [5]").
+
+- **common_topics_table**:
+  - Columns:
+    - entry_id (INTEGER, FOREIGN KEY): References peoplesay.entry_id.
+    - common_topics (TEXT): Individual common topics (e.g., "Experiences Aging [7]").
+
+- **data_type_table**:
+  - Columns:
+    - entry_id (INTEGER, FOREIGN KEY): References peoplesay.entry_id.
+    - data_type (TEXT): Individual data types (e.g., "Direct Quote").
+
+- **insurance_table**:
+  - Columns:
+    - entry_id (INTEGER, FOREIGN KEY): References peoplesay.entry_id.
+    - insurance (TEXT): Individual insurance types (e.g., "Traditional Medicare").
+
+- **race_ethnicity_table**:
+  - Columns:
+    - entry_id (INTEGER, FOREIGN KEY): References peoplesay.entry_id.
+    - race_ethnicity (TEXT): Individual race/ethnicity values (e.g., "Native American").
+
+**Relationships:**
+- The peoplesay table is the central table. All auxiliary tables (subtopics_table, topics_table, common_topics_table, data_type_table, insurance_table, race_ethnicity_table) are linked to peoplesay via entry_id.
+
+**Unique Values:**
+    - Age: 65-70, 71-75, 76-80, 81-85, 90-95, Under 65
+    - Income Range (FPL): 138-400% Federal Poverty Level, Above 400% Federal Poverty Level, Below 138% Federal Poverty Level
+    - Location Type: Rural, Suburban, Urban
+    - State: Alabama, California, Iowa, New York, Ohio, Pennsylvania, Texas
+    - Gender: Man, Woman
+    - Year Conducted Research: 2023
+    - Language: Cantonese, English, Spanish
+    - Participant Type: Caregiver or Staff, Older Adult, Subject-Matter Expert
+    - Data Type: Direct Quote, Summary from Transcript, Video/Audio
+    - Subtopics: Access to Care [5], Acute Health Conditions and Management [3], Adult Day Care [1], Ageism [7], Aging in Place [6], Assets [2], Assistive Devices [3], Attitudes towards Policymaking and Systems [8], Beneficiary Knowledge and Information Needs [4], Benefits Navigation Support [4], Caregiver Ecosystem [1], Changing Home Needs [6], Chronic Health Conditions and Management [3], Cognitive Ability [3], Control and Autonomy [7], Cultural Competence [7], Culturally Similar Providers [5], Current Job [2], Dental Vision and Hearing Care [5], Desire to Work [2], Driving [1], Drug Coverage [4], Early Life [7], Effects of Medications [5], Elder Abuse/Neglect [1], End of Life [3], Exercise [3], Experience as Caregivers [1], Experiences Aging [7], Family Relationships [1], Federal/State/Union Insurance [4], Financial Management [2], Financial Preparedness [2], Financial Status [2], Food and Nutrition Services [1], Fraud and Financial Literacy [2], Friends [1], Gender [7], Geography [6], Health Attitudes & Perception [3], Healthcare Costs [4], Healthcare Experiences [5], Healthcare Usage [5], Holistic Care [5], Home Features [6], Home Ownership [6], Hopes for the Future [7], Household Members [6], Housing Assistance [6], Housing Experience [6], Housing Security/Stability [6], Housing Type [6], Immigration [7], Isolation [1], Job History [2], Language [7], Learning [1], Legal Issues [1], Life and Aging Priorities [7], Medicaid [4], Medical Discrimination [5], Medicare [4], Mental Health [3], Mentorship [1], Military/Veteran Insurance [4], Mindsets and Worldviews [7], No Insurance [4], Non-Medical Benefits [4], Non-Medical Costs and Bills [2], Non-Medical Insurance [2], Partnership [1], Pension [2], Pets [1], Pharmacies [5], Physical Capacity and Mobility [3], Physical Safety [3], Physical Therapy [5], Pilots and Policies [8], Plan Choice [4], Policymaking and System Improvement Challenges [8], Policymaking and System Improvement Opportunities [8], Prevention and Contributors to Health [3], Primary Care [5], Prior Expectations of Aging [7], Private/Supplemental Insurance [4], Provider Preferences [5], Purpose and Fulfillment [7], Race and Ethnicity [7], Racism [7], Religion [7], Residential Care Setting [6], Retirement [2], Routines and Activities [1], Seeing Others Age [7], Self-Advocacy [7], Senior/Community Centers [1], Sexual Activity [1], Sexuality [7], Social Security Benefits [2], Social Services and Programs [1], Social/Community Relationships [1], Specialist Care [5], Substance Use [3], System Integration/Fragmentation [5], Technology [1], Transportation [1], Trust/Satisfaction in Care [5]
+    - Topics: Daily Life [1], Finances [2], Health Insurance [4], Health and Well-Being [3], Healthcare [5], Housing and Home [6], Personal Story and Identity [7], Policymaking and Innovation [8]
+    - Common Topics: Access to Care [5], Acute Health Conditions and Management [3], Adult Day Care [1], Ageism [7], Assistive Devices [3], Attitudes towards Policymaking and Systems [8], Beneficiary Knowledge and Information Needs [4], Benefits Navigation Support [4], Caregiver Ecosystem [1], Changing Home Needs [6], Chronic Health Conditions and Management [3], Cognitive Ability [3], Control and Autonomy [7], Current Job [2], Desire to Work [2], Driving [1], Drug Coverage [4], Early Life [7], Elder Abuse/Neglect [1], End of Life [3], Experience as Caregivers [1], Experiences Aging [7], Family Relationships [1], Financial Management [2], Financial Preparedness [2], Financial Status [2], Food and Nutrition Services [1], Friends [1], Geography [6], Health Attitudes & Perception [3], Healthcare Costs [4], Healthcare Experiences [5], Healthcare Usage [5], Hopes for the Future [7], Household Members [6], Housing Assistance [6], Housing Experience [6], Isolation [1], Job History [2], Language [7], Life and Aging Priorities [7], Medicaid [4], Medicare [4], Mental Health [3], Mindsets and Worldviews [7], Non-Medical Benefits [4], Non-Medical Costs and Bills [2], Partnership [1], Physical Capacity and Mobility [3], Pilots and Policies [8], Plan Choice [4], Policymaking and System Improvement Challenges [8], Policymaking and System Improvement Opportunities [8], Prevention and Contributors to Health [3], Provider Preferences [5], Purpose and Fulfillment [7], Race and Ethnicity [7], Religion [7], Residential Care Setting [6], Retirement [2], Routines and Activities [1], Seeing Others Age [7], Senior/Community Centers [1], Sexuality [7], Social Security Benefits [2], Social/Community Relationships [1], Specialist Care [5], Substance Use [3], System Integration/Fragmentation [5], Technology [1], Transportation [1], Trust/Satisfaction in Care [5]
+    - Insurance: Federal/State/Union Insurance, Medicare & Medicaid (Dual Eligible), Medicare Advantage, Medigap, Military/Veteran Insurance, Traditional Medicare
+    - Race/Ethnicity: African American or Black, American Indian and Alaska Native, Asian, Hispanic or Latino/a, Non-Hispanic White
+
+**User Question:**
+{user_query}
+
+**Task:**
+Generate ONLY the SQL query to retrieve the relevant data from the peoplesay.db SQLite database based on the user's question. Use the schema and unique values to ensure accuracy.
+- The main table is peoplesay.
+- Select at least p.data_unit, p.data_unit_title, and p.participant_name from the peoplesay table (aliased as p). You can select other relevant fields from p as well.
+- If the query involves filtering by subtopics, topics, common topics, data types, insurance, race/ethnicity, language, or participant type, join the appropriate auxiliary tables (subtopics_table as st, topics_table as t, common_topics_table as ct, data_type_table as dt, insurance_table as it, race_ethnicity_table as re) with peoplesay using p.entry_id. Use the provided aliases.
+- Use LIKE for partial text matches on text fields (like subtopics, topics, etc.) if appropriate for the user query. Use exact matches (=) for categorical fields like race/ethnicity, language, or age ranges when the user specifies them clearly.
+- **Avoid duplicate rows.  When joining auxiliary tables that may contain multiple matches for one entry, either:  
+  1) add DISTINCT to the SELECT list,  
+  2) use EXISTS sub‑queries instead of plain JOINs, or  
+  3) join against a sub‑query that first SELECTs DISTINCT entry_id.**
+- **Always collapse any multi‑valued fields (subtopics, topics, common_topics, etc.) into a single column:**
+  - Use `GROUP_CONCAT(DISTINCT column)` (omit the separator argument—SQLite only allows one argument when using DISTINCT, and it defaults to comma) **or**  
+  - Use `JSON_GROUP_ARRAY(DISTINCT column)` for a JSON array.
+- Ensure the generated SQL is valid for SQLite.
+- Output ONLY the SQL query, without any explanatory text before or after it, and do not wrap it in markdown code blocks (
+sql ...
+).
+- Include new lines for readability.
+
+**Example:**
+For the user question "What do older adults from Tribal communities say about specialist care?":
+SELECT p.data_unit, p.data_unit_title, p.participant_name
+FROM peoplesay p
+JOIN race_ethnicity_table re ON p.entry_id = re.entry_id
+JOIN subtopics_table st ON p.entry_id = st.entry_id
+WHERE re.race_ethnicity = 'American Indian and Alaska Native'
+AND st.subtopics LIKE '%Specialist Care%'
+"""
+
+# --- Summary Generation Prompt ---
+# This prompt asks the LLM to summarize the data retrieved by the SQL query,
+# citing sources using the 'data_unit' field as requested.
+SUMMARY_GENERATION_PROMPT_TEMPLATE = """
+You are tasked with summarizing insights from the People Say database based on excerpts provided below.
+
+User Query: "{user_query}"
+
+Based *only* on the following retrieved data excerpts, generate a concise summary answering the user query.
+
+Instructions:
+1.  Identify **key themes** and **insights** directly supported by the provided excerpts.
+2.  Cite the source for *each* piece of information using the format [data_unit_title]. The 'p.data_unit_title' is provided for each excerpt.
+3.  Do *not* include information not present in the excerpts below.
+4.  Do *not* invent information or make assumptions beyond the text.
+5.  Format the output clearly.
+
+Retrieved Data Excerpts:
+---
+{retrieved_data}
+---
+
+Summary:
+"""
