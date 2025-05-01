@@ -8,12 +8,14 @@ Reads database path and API keys (preferably from environment variables).
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from a .env file if it exists
-# Create a .env file in the same directory with GOOGLE_API_KEY=YOUR_API_KEY
-load_dotenv()
+# Constants for database
+DB_PATH = "peoplesay.db"
 
-# --- Database Configuration ---
-DB_PATH = "peoplesay.db" # Path to your SQLite database file
+# Try to load environment variables from .env file, but don't require it
+try:
+    load_dotenv()
+except FileNotFoundError:
+    pass  # Silently continue if .env loading fails
 
 # --- LLM Configuration ---
 # Fetch the API key from environment variables for security
@@ -26,10 +28,9 @@ SQL_MODEL_NAME = "models/gemini-1.5-flash" # Model for generating SQL
 SUMMARY_MODEL_NAME = "models/gemini-1.5-flash" # Model for generating summaries
 
 # --- Input Validation ---
-if not GOOGLE_API_KEY:
-    print("Warning: GOOGLE_API_KEY environment variable not set.")
-    # Consider raising an error or exiting if the API key is essential
-    # raise ValueError("GOOGLE_API_KEY environment variable is required.")
+# No need to print a warning here as we'll handle this in the UI
+# if not GOOGLE_API_KEY:
+#     print("Warning: GOOGLE_API_KEY environment variable not set.")
 
 if not os.path.exists(DB_PATH):
     print(f"Warning: Database file not found at {DB_PATH}")

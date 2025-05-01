@@ -9,6 +9,8 @@ import streamlit as st
 import core_logic # The module orchestrating the backend logic
 import logging # Use logging
 import prompts
+import os
+import config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -23,6 +25,38 @@ st.set_page_config(
 # --- Application Title ---
 st.title("🗣️ People Say AI Search Tool")
 st.caption("Query the People Say database using natural language.")
+
+# --- API Key Management in Sidebar ---
+st.sidebar.header("API Key Configuration")
+
+# Get the API key from session state if available, otherwise from config
+if 'api_key' not in st.session_state:
+    st.session_state.api_key = config.GOOGLE_API_KEY or ""
+
+# Always show the API key input field
+api_key = st.sidebar.text_input(
+    "Enter your Google API Key:", 
+    value=st.session_state.api_key,
+    type="password",
+    help="Required to use the AI functionality. Get a key from Google AI Studio."
+)
+
+# Process the API key if provided
+if api_key:
+    if api_key != st.session_state.api_key:
+        # Update the session state and configuration
+        st.session_state.api_key = api_key
+        os.environ["GOOGLE_API_KEY"] = api_key
+        config.GOOGLE_API_KEY = api_key
+        
+        # Reconfigure the genai client with the new API key
+        import llm_inference
+        if llm_inference.configure_genai():
+            st.sidebar.success("✅ API Key configured successfully")
+        else:
+            st.sidebar.error("❌ Failed to configure API key. Please check if it's valid.")
+else:
+    st.sidebar.error("⚠️ Please enter a Google API Key to use this application")
 
 # --- Sidebar Information ---
 st.sidebar.info(
@@ -41,7 +75,7 @@ st.sidebar.warning(
     """
     **Note:**
     - AI-generated content may require verification.
-    - Ensure your `GOOGLE_API_KEY` is set in a `.env` file.
+    - You must provide a valid Google API Key in the field above.
     - The `peoplesay.db` file must be in the same directory.
     """
 )
@@ -75,7 +109,8 @@ template_descriptions = {
 st.caption(template_descriptions.get(selected_template, ""))
 
 # --- Search Button and Processing Logic ---
-if st.button("✨ Search Insights"):
+button_disabled = not api_key  # Disable if no API key
+if st.button("✨ Search Insights", disabled=button_disabled):
     if user_query:
         logging.info(f"Search button clicked with query: {user_query}")
         # Show a spinner while processing

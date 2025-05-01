@@ -13,25 +13,53 @@ import config # Import configuration (API key, model names)
 import prompts # Import prompt templates
 import logging # Use logging for better error/info reporting
 import re # For potential SQL cleaning
+import requests # For API key verification
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# --- Initialization ---
-try:
-    if not config.GOOGLE_API_KEY:
-        logging.warning("GOOGLE_API_KEY not found in config. Attempting to run without API key.")
-        # Depending on requirements, you might raise an error here:
-        # raise ValueError("GOOGLE_API_KEY is not set. Cannot initialize LLM interface.")
-    else:
-        genai.configure(api_key=config.GOOGLE_API_KEY)
-        logging.info("Google Generative AI SDK configured successfully.")
-except AttributeError:
-     logging.error("Failed to configure Google Generative AI SDK. Is GOOGLE_API_KEY set correctly in config?")
-     # raise # Optionally re-raise the error if configuration is critical
-except Exception as e:
-    logging.error(f"An unexpected error occurred during Google GenAI configuration: {e}", exc_info=True)
-    # raise # Optionally re-raise
+# --- Function to verify Google API Key ---
+def verify_google_api_key(api_key):
+    """
+    Verifies if the provided Google API key is valid by making a test request.
+    Returns True if valid, False otherwise.
+    """
+    try:
+        # Small test request to the Generative Language API
+        url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+        response = requests.get(url, timeout=5)
+        
+        if response.status_code == 200:
+            return True
+        else:
+            error_msg = response.json().get('error', {}).get('message', 'Unknown error')
+            logging.warning(f"API key verification failed: {error_msg}")
+            return False
+    except Exception as e:
+        logging.error(f"Error verifying API key: {e}")
+        return False
+
+# Function to configure/reconfigure the API with a new key
+def configure_genai():
+    """Configure Google Generative AI with the current API key from config."""
+    try:
+        if not config.GOOGLE_API_KEY:
+            logging.warning("GOOGLE_API_KEY not found in config. Attempting to run without API key.")
+            return False
+        else:
+            if not verify_google_api_key(config.GOOGLE_API_KEY):
+                logging.error("Invalid Google API Key provided.")
+                config.GOOGLE_API_KEY = None
+                return False
+            genai.configure(api_key=config.GOOGLE_API_KEY)
+            logging.info("Google Generative AI SDK configured successfully.")
+            return True
+    except Exception as e:
+        logging.error(f"Failed to configure Google Generative AI SDK: {e}", exc_info=True)
+        return False
+
+# Initial configuration attempt
+configure_genai()
 
 # --- SQL Generation ---
 def generate_sql_from_query(user_query: str) -> str | None:
@@ -45,9 +73,11 @@ def generate_sql_from_query(user_query: str) -> str | None:
         str | None: The generated SQL query string, or None if generation fails or
                     API key is not configured.
     """
-    if not config.GOOGLE_API_KEY:
+    # Attempt to reconfigure with the latest API key
+    if not config.GOOGLE_API_KEY or not configure_genai():
         logging.error("Cannot generate SQL: Google API Key is not configured.")
         return None
+    
     if not user_query or not isinstance(user_query, str):
         logging.warning("Cannot generate SQL: Invalid user query provided.")
         return None
@@ -115,7 +145,8 @@ def generate_summary_from_data(user_query: str, retrieved_data_df: pd.DataFrame,
             Returns (None, None) if summarization fails, data is empty, or API key is missing.
             Returns (error_message_str, None) if an error occurs during generation.
     """
-    if not config.GOOGLE_API_KEY:
+    # Attempt to reconfigure with the latest API key
+    if not config.GOOGLE_API_KEY or not configure_genai():
         logging.error("Cannot generate summary: Google API Key is not configured.")
         return None, None
 
