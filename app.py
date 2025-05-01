@@ -116,6 +116,10 @@ st.sidebar.info(
     Based on the [People Say](https://thepeoplesay.org/) project by the
     Public Policy Lab, funded by The SCAN Foundation.
 
+    **API Key:**
+    You can get a Google API Key with the Generative Language API enabled from 
+    [Google AI Studio](https://aistudio.google.com/app/apikey).
+
     **Security Note**: 
     Your API key is stored only in your current browser session.
     Each browser window uses its own API key, so you'll need to 
