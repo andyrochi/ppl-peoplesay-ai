@@ -122,6 +122,7 @@ AND st.subtopics LIKE '%Specialist Care%'
 # This prompt asks the LLM to summarize the data retrieved by the SQL query,
 # citing sources using the 'data_unit' field as requested.
 SUMMARY_GENERATION_PROMPT_TEMPLATE = """
+You are an expert qualitative researcher analyzing data from the People Say database, which features first-hand insights from older adults and caregivers, particularly from underrepresented communities.
 You are tasked with summarizing insights from the People Say database based on excerpts provided below.
 
 User Query: "{user_query}"
@@ -140,5 +141,138 @@ Retrieved Data Excerpts:
 {retrieved_data}
 ---
 
-Summary:
+Thematic Analysis:
 """
+
+SUMMARY_GENERATION_NEW_TEMPLATE = """
+You are an expert qualitative researcher analyzing data from the People Say database, which features first-hand insights from older adults and caregivers, particularly from underrepresented communities.
+
+User Query: "{user_query}"
+
+Based *only* on the following data excerpts, conduct a thematic analysis that answers the user's query:
+
+Instructions:
+1. **Identify Primary Themes**: Recognize recurring patterns, concepts, or sentiments in the data.
+2. **Extract Illustrative Quotes**: For each theme, identify representative quotes that best illustrate the theme.
+3. **Note Demographic Patterns**: When relevant, identify how themes may vary across demographic groups (age, race/ethnicity, location type, etc.).
+4. **Consider Outliers**: Highlight any notable exceptions or contrasting viewpoints.
+5. **Maintain Voice**: Preserve the authentic voices and perspectives of participants.
+6. **Cite Sources**: Use the format [Source ID] for all information, where Source ID is the data_unit_title.
+7. **Structure Your Analysis**: Present your findings with clear thematic headings.
+8. **Avoid Interpretation Beyond Data**: Do not make claims unsupported by the provided excerpts.
+
+Retrieved Data Excerpts:
+---
+{retrieved_data}
+---
+
+Thematic Analysis:
+"""
+
+# ===========================================
+
+# Define multiple summary generation templates
+THEMATIC_ANALYSIS_TEMPLATE = """
+You are an expert qualitative researcher analyzing data from the People Say database, which features first-hand insights from older adults and caregivers, particularly from underrepresented communities.
+
+User Query: "{user_query}"
+
+Based *only* on the following data excerpts, conduct a thematic analysis that answers the user's query, identify recurring themes, patterns, and concepts:
+
+Instructions:
+1. **Identify Primary Themes**: Recognize recurring patterns, concepts, or sentiments in the data.
+2. **Extract Illustrative Quotes**: For each theme, identify representative quotes that best illustrate the theme.
+3. **Note Demographic Patterns**: When relevant, identify how themes may vary across demographic groups (age, race/ethnicity, location type, etc.).
+4. **Consider Outliers**: Highlight any notable exceptions or contrasting viewpoints.
+5. **Maintain Voice**: Preserve the authentic voices and perspectives of participants.
+6. **Cite Sources**: Use the format [Source ID] for all information, where Source ID is the data_unit_title.
+7. **Structure Your Analysis**: Present your findings with clear thematic headings.
+8. **Avoid Interpretation Beyond Data**: Do not make claims unsupported by the provided excerpts.
+
+Retrieved Data Excerpts:
+---
+{retrieved_data}
+---
+
+Thematic Analysis:
+"""
+
+NARRATIVE_ANALYSIS_TEMPLATE = """
+You are an expert qualitative researcher analyzing data from the People Say database, which features first-hand insights from older adults and caregivers, particularly from underrepresented communities.
+
+User Query: "{user_query}"
+
+Based *only* on the following data excerpts, analyze for narrative elements, storylines, and personal experiences:
+
+Instructions:
+1. **Identify Key Narratives**: Identify key narratives and story arcs in participants' accounts.
+2. **Positions**: Note how participants position themselves and others in their stories.
+3. **Temporal Aspects**: Examine temporal aspects (past experiences, present situations, future outlooks).
+4. **Emotional Components**: Highlight emotional components and tone.
+5. **Cite Sources**: Cite sources using [Source ID] format for all information.
+7. **Structure Your Analysis**: Present your findings with clear narrative headings.
+8. **Avoid Interpretation Beyond Data**: Do not make claims unsupported by the provided excerpts. If the data is insufficient to support a claim, state that clearly.
+
+
+Retrieved Data Excerpts:
+---
+{retrieved_data}
+---
+
+Narrative Analysis:
+"""
+
+DEMOGRAPHIC_COMPARISON_TEMPLATE = """
+You are a researcher analyzing how experiences vary across demographic groups in the People Say database.
+
+User Query: "{user_query}"
+
+Compare and contrast perspectives across different demographic categories:
+
+Instructions:
+1. Identify similarities and differences based on age, race/ethnicity, location type, etc.
+2. Note unique challenges or opportunities mentioned by specific groups
+3. Avoid overgeneralizing from limited data
+4. Cite sources using [Source ID] format for all information
+5. Organize findings by demographic variable or by theme, whichever provides clearer patterns
+
+Retrieved Data Excerpts:
+---
+{retrieved_data}
+---
+
+Demographic Comparison:
+"""
+
+POLICY_IMPLICATIONS_TEMPLATE = """
+You are a policy analyst extracting actionable insights from the People Say database.
+
+User Query: "{user_query}"
+
+Analyze these excerpts for policy-relevant insights and recommendations:
+
+Instructions:
+1. Identify system gaps, barriers, and challenges mentioned by participants
+2. Note participant suggestions for improvement
+3. Connect participant experiences to existing policy contexts when evident
+4. Avoid making policy recommendations not directly supported by the data
+5. Cite sources using [Source ID] format for all information
+
+Retrieved Data Excerpts:
+---
+{retrieved_data}
+---
+
+Policy Implications Analysis:
+"""
+
+# Dictionary to store all templates for easy access
+SUMMARY_TEMPLATES = {
+    "Thematic Analysis": THEMATIC_ANALYSIS_TEMPLATE,
+    "Narrative Analysis": NARRATIVE_ANALYSIS_TEMPLATE,
+    "Demographic Comparison": DEMOGRAPHIC_COMPARISON_TEMPLATE,
+    "Policy Implications": POLICY_IMPLICATIONS_TEMPLATE
+}
+
+# Default template
+DEFAULT_SUMMARY_TEMPLATE = THEMATIC_ANALYSIS_TEMPLATE

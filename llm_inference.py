@@ -93,7 +93,8 @@ def generate_sql_from_query(user_query: str) -> str | None:
         return None
 
 # --- Summary Generation ---
-def generate_summary_from_data(user_query: str, retrieved_data_df: pd.DataFrame) -> tuple[str | None, list | None]:
+def generate_summary_from_data(user_query: str, retrieved_data_df: pd.DataFrame, 
+                               template_key: str = "Thematic Analysis") -> tuple[str | None, list | None]:
     """
     Generates a summary from the retrieved data DataFrame using the configured LLM.
 
@@ -102,6 +103,9 @@ def generate_summary_from_data(user_query: str, retrieved_data_df: pd.DataFrame)
         retrieved_data_df (pd.DataFrame): DataFrame containing the data retrieved
                                          by the SQL query. Must include 'data_unit'
                                          and 'participant_name' columns.
+        template_key (str): The key of the template to use from prompts.SUMMARY_TEMPLATES.
+                           Defaults to "Thematic Analysis".
+        
 
     Returns:
         tuple[str | None, list | None]: A tuple containing:
@@ -152,10 +156,13 @@ def generate_summary_from_data(user_query: str, retrieved_data_df: pd.DataFrame)
     try:
         # Initialize the specific model for summarization
         model = genai.GenerativeModel(config.SUMMARY_MODEL_NAME)
-        logging.info(f"Using model {config.SUMMARY_MODEL_NAME} for summarization.")
+        logging.info(f"Using model {config.SUMMARY_MODEL_NAME} for summarization with {template_key} template.")
+
+        # Get the appropriate template
+        template = prompts.SUMMARY_TEMPLATES.get(template_key, prompts.DEFAULT_SUMMARY_TEMPLATE)
 
         # Format the prompt
-        prompt = prompts.SUMMARY_GENERATION_PROMPT_TEMPLATE.format(
+        prompt = template.format(
             user_query=user_query,
             retrieved_data=data_context_string
         )

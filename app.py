@@ -8,6 +8,7 @@ Provides the user interface for entering queries and displays the results.
 import streamlit as st
 import core_logic # The module orchestrating the backend logic
 import logging # Use logging
+import prompts
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -46,12 +47,32 @@ st.sidebar.warning(
 )
 
 # --- Main Input Area ---
-default_query = "How do older adults from Tribal communities feel about their access to specialist care?"
+# default_query = "How do older adults from Tribal communities feel about their access to specialist care?"
+default_query = "How do older asians feel about their access to health care?"
 user_query = st.text_area( # Use text_area for potentially longer queries
     "Enter your question about older adults' experiences:",
     value=default_query,
     height=100
 )
+
+# --- Analysis Type Selection ---
+st.subheader("Analysis Type")
+selected_template = st.radio(
+    "Select analysis approach:",
+    options=list(prompts.SUMMARY_TEMPLATES.keys()),
+    index=0,  # Default to the first option
+    help="Choose the type of analysis to perform on the retrieved data."
+)
+
+# Description of the selected template type
+template_descriptions = {
+    "Thematic Analysis": "Identifies recurring patterns, concepts, and themes across participants.",
+    "Narrative Analysis": "Focuses on storytelling elements and how participants construct their experiences.",
+    "Demographic Comparison": "Compares experiences across different demographic groups.",
+    "Policy Implications": "Extracts insights relevant to policy development and system improvements."
+}
+
+st.caption(template_descriptions.get(selected_template, ""))
 
 # --- Search Button and Processing Logic ---
 if st.button("✨ Search Insights"):
@@ -61,7 +82,10 @@ if st.button("✨ Search Insights"):
         with st.spinner("🧠 Thinking... Generating SQL, querying DB, and summarizing..."):
             try:
                 # Call the core logic function to handle the entire process
-                summary, sources, sql_query = core_logic.process_query(user_query)
+                summary, sources, sql_query = core_logic.process_query(
+                    user_query,
+                    template_key=selected_template
+                )
 
                 # --- Display Results ---
                 st.subheader("🔍 Search Results")
