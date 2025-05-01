@@ -92,30 +92,43 @@ We believe that effective policymaking listens to most-affected communities—bu
 **Task:**
 Generate ONLY the SQL query to retrieve the relevant data from the peoplesay.db SQLite database based on the user's question. Use the schema and unique values to ensure accuracy.
 - The main table is peoplesay.
-- Select at least p.data_unit, p.data_unit_title, and p.participant_name from the peoplesay table (aliased as p). You can select other relevant fields from p as well.
+- **Select the following fields from the peoplesay table (aliased as p): `p.entry_id`, `p.data_unit`, `p.data_unit_title`, `p.participant_name`, `p.age`, `p.income_range_fpl`, `p.location_type`, `p.state`, `p.gender`, `p.participant_type`. These fields provide essential context for analysis.** You can select other relevant fields from p as well.
 - If the query involves filtering by subtopics, topics, common topics, data types, insurance, race/ethnicity, language, or participant type, join the appropriate auxiliary tables (subtopics_table as st, topics_table as t, common_topics_table as ct, data_type_table as dt, insurance_table as it, race_ethnicity_table as re) with peoplesay using p.entry_id. Use the provided aliases.
 - Use LIKE for partial text matches on text fields (like subtopics, topics, etc.) if appropriate for the user query. Use exact matches (=) for categorical fields like race/ethnicity, language, or age ranges when the user specifies them clearly.
-- **Avoid duplicate rows.  When joining auxiliary tables that may contain multiple matches for one entry, either:  
-  1) add DISTINCT to the SELECT list,  
-  2) use EXISTS sub‑queries instead of plain JOINs, or  
-  3) join against a sub‑query that first SELECTs DISTINCT entry_id.**
-- **Always collapse any multi‑valued fields (subtopics, topics, common_topics, etc.) into a single column:**
-  - Use `GROUP_CONCAT(DISTINCT column)` (omit the separator argument—SQLite only allows one argument when using DISTINCT, and it defaults to comma) **or**  
-  - Use `JSON_GROUP_ARRAY(DISTINCT column)` for a JSON array.
+- **If joining auxiliary tables that might result in multiple rows per `peoplesay` entry (like `subtopics_table`, `topics_table`, `common_topics_table`, `data_type_table`, `insurance_table`, `race_ethnicity_table`), you MUST prevent duplicate `peoplesay` rows and aggregate the information from the joined table.**
+  - **Use `GROUP BY p.entry_id` (and include all selected `p.*` columns in the `GROUP BY` clause).**
+  - **Use `GROUP_CONCAT(DISTINCT joined_table_alias.column_name)` to aggregate values from the joined table into a single comma-separated string. For example, if joining `race_ethnicity_table` as `re`, select `GROUP_CONCAT(DISTINCT re.race_ethnicity) AS participant_race_ethnicity`. Apply this pattern for any necessary joined auxiliary table fields.**
 - Ensure the generated SQL is valid for SQLite.
-- Output ONLY the SQL query, without any explanatory text before or after it, and do not wrap it in markdown code blocks (
-sql ...
-).
+- Output ONLY the SQL query, without any explanatory text before or after it, and do not wrap it in markdown code blocks (sql ...).
 - Include new lines for readability.
 
 **Example:**
 For the user question "What do older adults from Tribal communities say about specialist care?":
-SELECT p.data_unit, p.data_unit_title, p.participant_name
-FROM peoplesay p
-JOIN race_ethnicity_table re ON p.entry_id = re.entry_id
-JOIN subtopics_table st ON p.entry_id = st.entry_id
-WHERE re.race_ethnicity = 'American Indian and Alaska Native'
-AND st.subtopics LIKE '%Specialist Care%'
+SELECT
+    p.entry_id,
+    p.data_unit,
+    p.data_unit_title,
+    p.participant_name,
+    p.age,
+    p.income_range_fpl,
+    p.location_type,
+    p.state,
+    p.gender,
+    p.participant_type,
+    GROUP_CONCAT(DISTINCT re.race_ethnicity) AS participant_race_ethnicity,
+    GROUP_CONCAT(DISTINCT st.subtopics) AS relevant_subtopics
+FROM
+    peoplesay p
+JOIN
+    race_ethnicity_table re ON p.entry_id = re.entry_id
+JOIN
+    subtopics_table st ON p.entry_id = st.entry_id
+WHERE
+    re.race_ethnicity = 'American Indian and Alaska Native'
+    AND st.subtopics LIKE '%Specialist Care%'
+    AND p.participant_type = 'Older Adult'
+GROUP BY
+    p.entry_id, p.data_unit, p.data_unit_title, p.participant_name, p.age, p.income_range_fpl, p.location_type, p.state, p.gender, p.participant_type;
 """
 
 # --- Summary Generation Prompt ---
