@@ -12,7 +12,7 @@ import logging # Use logging
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def process_query(user_query: str, template_key: str = "Thematic Analysis") -> tuple[str | None, list | None, str | None]:
+def process_query(user_query: str, template_key: str = "Thematic Analysis", api_key: str = None) -> tuple[str | None, list | None, str | None]:
     """
     Processes the user's natural language query through the entire pipeline.
 
@@ -23,6 +23,7 @@ def process_query(user_query: str, template_key: str = "Thematic Analysis") -> t
     Args:
         user_query (str): The natural language question from the user.
         template_key (str): The key of the template to use for summarization.
+        api_key (str, optional): The API key to use for LLM operations.
 
     Returns:
         tuple[str | None, list | None, str | None]: A tuple containing:
@@ -32,8 +33,13 @@ def process_query(user_query: str, template_key: str = "Thematic Analysis") -> t
     """
     logging.info(f"Processing user query: {user_query}")
 
+    # --- Error check for API key ---
+    if not api_key:
+        logging.error("No API key provided to process_query")
+        return "Error: Missing API key. Please provide a valid Google API key.", [], None
+
     # --- Step 1: Generate SQL Query ---
-    sql_query = llm_inference.generate_sql_from_query(user_query)
+    sql_query = llm_inference.generate_sql_from_query(user_query, api_key=api_key)
 
     if not sql_query:
         logging.error("Failed to generate SQL query.")
@@ -59,7 +65,7 @@ def process_query(user_query: str, template_key: str = "Thematic Analysis") -> t
     # llm_inference handles the case where the DataFrame is empty, but we check again for clarity
     if not retrieved_data_df.empty:
         summary, sources = llm_inference.generate_summary_from_data(
-            user_query, retrieved_data_df, template_key=template_key
+            user_query, retrieved_data_df, template_key=template_key, api_key=api_key
         )
 
         if summary is None and sources is None: # Indicates a failure in summary generation API call

@@ -8,8 +8,8 @@ Reads database path and API keys (preferably from environment variables).
 import os
 from dotenv import load_dotenv
 
-# Constants for database
-DB_PATH = "peoplesay.db"
+# Constants for database - use absolute path for consistency
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "peoplesay.db")
 
 # Try to load environment variables from .env file, but don't require it
 try:

@@ -40,29 +40,29 @@ def verify_google_api_key(api_key):
         return False
 
 # Function to configure/reconfigure the API with a new key
-def configure_genai():
-    """Configure Google Generative AI with the current API key from config."""
+def configure_genai(api_key=None):
+    """Configure Google Generative AI with the provided API key or from config."""
     try:
-        if not config.GOOGLE_API_KEY:
-            logging.warning("GOOGLE_API_KEY not found in config. Attempting to run without API key.")
+        # Use provided API key or fall back to config
+        key_to_use = api_key or config.GOOGLE_API_KEY
+        
+        if not key_to_use:
+            logging.warning("No API key provided. Attempting to run without API key.")
             return False
         else:
-            if not verify_google_api_key(config.GOOGLE_API_KEY):
+            if not verify_google_api_key(key_to_use):
                 logging.error("Invalid Google API Key provided.")
-                config.GOOGLE_API_KEY = None
                 return False
-            genai.configure(api_key=config.GOOGLE_API_KEY)
+                
+            genai.configure(api_key=key_to_use)
             logging.info("Google Generative AI SDK configured successfully.")
             return True
     except Exception as e:
         logging.error(f"Failed to configure Google Generative AI SDK: {e}", exc_info=True)
         return False
 
-# Initial configuration attempt
-configure_genai()
-
 # --- SQL Generation ---
-def generate_sql_from_query(user_query: str) -> str | None:
+def generate_sql_from_query(user_query: str, api_key=None) -> str | None:
     """
     Generates an SQL query from a natural language user query using the configured LLM.
 
@@ -73,9 +73,12 @@ def generate_sql_from_query(user_query: str) -> str | None:
         str | None: The generated SQL query string, or None if generation fails or
                     API key is not configured.
     """
-    # Attempt to reconfigure with the latest API key
-    if not config.GOOGLE_API_KEY or not configure_genai():
-        logging.error("Cannot generate SQL: Google API Key is not configured.")
+    if not api_key:
+        logging.error("Cannot generate SQL: No API key provided")
+        return None
+    # Attempt to configure with the provided API key
+    if not configure_genai(api_key):
+        logging.error("Cannot generate SQL: Invalid or missing API key.")
         return None
     
     if not user_query or not isinstance(user_query, str):
@@ -124,7 +127,8 @@ def generate_sql_from_query(user_query: str) -> str | None:
 
 # --- Summary Generation ---
 def generate_summary_from_data(user_query: str, retrieved_data_df: pd.DataFrame, 
-                               template_key: str = "Thematic Analysis") -> tuple[str | None, list | None]:
+                               template_key: str = "Thematic Analysis",
+                               api_key=None) -> tuple[str | None, list | None]:
     """
     Generates a summary from the retrieved data DataFrame using the configured LLM.
 
@@ -145,10 +149,15 @@ def generate_summary_from_data(user_query: str, retrieved_data_df: pd.DataFrame,
             Returns (None, None) if summarization fails, data is empty, or API key is missing.
             Returns (error_message_str, None) if an error occurs during generation.
     """
-    # Attempt to reconfigure with the latest API key
-    if not config.GOOGLE_API_KEY or not configure_genai():
-        logging.error("Cannot generate summary: Google API Key is not configured.")
-        return None, None
+    # Attempt to configure with the provided API key
+
+    if not api_key:
+        logging.error("Cannot generate summary: No API key provided")
+        return "API key error: Please provide a valid API key.", None
+
+    if not configure_genai(api_key):
+        logging.error("Cannot generate summary: Invalid or missing API key.")
+        return "API key error: Failed to authenticate with the provided key.", None
 
     if retrieved_data_df.empty:
         logging.info("No data provided to generate summary.")

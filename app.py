@@ -11,6 +11,7 @@ import logging # Use logging
 import prompts
 import os
 import config
+from database_init import initialize_database  # Import the initialization function
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -22,6 +23,14 @@ st.set_page_config(
     layout="wide" # Use wide layout for better display of results
 )
 
+# Initialize the database if needed (add this before the page config)
+if not os.path.exists(config.DB_PATH) or os.path.getsize(config.DB_PATH) == 0:
+    with st.spinner("Initializing database... This may take a moment..."):
+        success = initialize_database()
+        if not success:
+            st.error("Failed to initialize the database. Please check the logs for details.")
+            st.stop()
+
 # --- Application Title ---
 st.title("🗣️ People Say AI Search Tool")
 st.caption("Query the People Say database using natural language.")
@@ -29,34 +38,71 @@ st.caption("Query the People Say database using natural language.")
 # --- API Key Management in Sidebar ---
 st.sidebar.header("API Key Configuration")
 
-# Get the API key from session state if available, otherwise from config
+# Get the API key from session state if available, otherwise initialize empty
 if 'api_key' not in st.session_state:
-    st.session_state.api_key = config.GOOGLE_API_KEY or ""
+    st.session_state.api_key = ""  # Don't read from config, start empty
+    st.session_state.api_key_valid = False
 
-# Always show the API key input field
-api_key = st.sidebar.text_input(
-    "Enter your Google API Key:", 
-    value=st.session_state.api_key,
-    type="password",
-    help="Required to use the AI functionality. Get a key from Google AI Studio."
-)
-
-# Process the API key if provided
-if api_key:
-    if api_key != st.session_state.api_key:
-        # Update the session state and configuration
-        st.session_state.api_key = api_key
-        os.environ["GOOGLE_API_KEY"] = api_key
-        config.GOOGLE_API_KEY = api_key
+# If we already have a valid API key, just show status and option to change
+if st.session_state.get('api_key_valid', False):
+    st.sidebar.success("✅ API Key configured successfully")
+    
+    # Add a button to allow changing the key if needed
+    if st.sidebar.button("Change API Key"):
+        st.session_state.show_api_input = True
+    
+    # Only show the field if explicitly requested
+    if st.session_state.get('show_api_input', False):
+        new_api_key = st.sidebar.text_input(
+            "Enter new Google API Key:", 
+            value="",
+            type="password",
+            help="Required to use the AI functionality. Get a key from Google AI Studio."
+        )
         
-        # Reconfigure the genai client with the new API key
-        import llm_inference
-        if llm_inference.configure_genai():
-            st.sidebar.success("✅ API Key configured successfully")
-        else:
-            st.sidebar.error("❌ Failed to configure API key. Please check if it's valid.")
+        if new_api_key:
+            # Only update session state, not env vars or config
+            st.session_state.api_key = new_api_key
+            
+            import llm_inference
+            # Pass API key directly to configure_genai
+            st.session_state.api_key_valid = llm_inference.configure_genai(api_key=new_api_key)
+            st.session_state.show_api_input = False  # Hide input again
+            
+            if st.session_state.api_key_valid:
+                st.sidebar.success("✅ New API Key configured successfully")
+            else:
+                st.sidebar.error("❌ Failed to configure API key. Please check if it's valid.")
+                # Keep showing the input field if validation failed
+                st.session_state.show_api_input = True
 else:
-    st.sidebar.error("⚠️ Please enter a Google API Key to use this application")
+    # Always show the API key input field if we don't have a valid key
+    api_key = st.sidebar.text_input(
+        "Enter your Google API Key:", 
+        value=st.session_state.api_key,
+        type="password",
+        help="Required to use the AI functionality. Get a key from Google AI Studio."
+    )
+    
+    if api_key:
+        if api_key != st.session_state.api_key or not st.session_state.get('api_key_valid', False):
+            # Only update session state, not env vars or config
+            st.session_state.api_key = api_key
+            
+            import llm_inference
+            # Pass API key directly to configure_genai
+            st.session_state.api_key_valid = llm_inference.configure_genai(api_key=api_key)
+            
+            if st.session_state.api_key_valid:
+                st.sidebar.success("✅ API Key configured successfully")
+            else:
+                st.sidebar.error("❌ Failed to configure API key. Please check if it's valid.")
+    else:
+        st.session_state.api_key_valid = False
+        st.sidebar.error("⚠️ Please enter a Google API Key to use this application")
+
+# For debugging - display current validation state (can remove later)
+# st.sidebar.text(f"API key valid: {st.session_state.get('api_key_valid', False)}")
 
 # --- Sidebar Information ---
 st.sidebar.info(
@@ -69,6 +115,11 @@ st.sidebar.info(
     **Database:**
     Based on the [People Say](https://thepeoplesay.org/) project by the
     Public Policy Lab, funded by The SCAN Foundation.
+
+    **Security Note**: 
+    Your API key is stored only in your current browser session.
+    Each browser window uses its own API key, so you'll need to 
+    enter it once per browser session.
     """
 )
 st.sidebar.warning(
@@ -76,7 +127,6 @@ st.sidebar.warning(
     **Note:**
     - AI-generated content may require verification.
     - You must provide a valid Google API Key in the field above.
-    - The `peoplesay.db` file must be in the same directory.
     """
 )
 
@@ -109,7 +159,8 @@ template_descriptions = {
 st.caption(template_descriptions.get(selected_template, ""))
 
 # --- Search Button and Processing Logic ---
-button_disabled = not api_key  # Disable if no API key
+# Only enable the button if we have a VALID API key
+button_disabled = not (st.session_state.api_key and st.session_state.get('api_key_valid', False))
 if st.button("✨ Search Insights", disabled=button_disabled):
     if user_query:
         logging.info(f"Search button clicked with query: {user_query}")
@@ -119,7 +170,8 @@ if st.button("✨ Search Insights", disabled=button_disabled):
                 # Call the core logic function to handle the entire process
                 summary, sources, sql_query = core_logic.process_query(
                     user_query,
-                    template_key=selected_template
+                    template_key=selected_template,
+                    api_key=st.session_state.api_key
                 )
 
                 # --- Display Results ---
