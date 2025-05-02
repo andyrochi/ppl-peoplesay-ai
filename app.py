@@ -164,7 +164,7 @@ st.page_link("pages/about.py", label="Learn more about this tool and its design 
 
 # --- Main Input Area ---
 # default_query = "How do older adults from Tribal communities feel about their access to specialist care?"
-default_query = "How do older asians feel about their access to health care?"
+default_query = "How do older asians feel about health care in general?"
 
 user_query = st.text_area( # Use text_area for potentially longer queries
     "Enter your question about older adults' experiences:",
