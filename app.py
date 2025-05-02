@@ -16,7 +16,6 @@ from database_init import initialize_database  # Import the initialization funct
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# --- Page Configuration (Optional) ---
 st.set_page_config(
     page_title="People Say AI Search",
     page_icon="🗣️", # Optional: Add a relevant emoji

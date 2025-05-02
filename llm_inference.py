@@ -182,8 +182,38 @@ def generate_summary_from_data(user_query: str, retrieved_data_df: pd.DataFrame,
         participant = row['participant_name']
         excerpt = row['data_unit'] # Using data_unit as the excerpt text
 
-        # Format for the prompt
-        data_context_parts.append(f"Source ID: [{source_id}]\nParticipant: {participant}\nExcerpt: {excerpt}\n")
+        # --- Add Metadata Extraction ---
+        # Extract relevant metadata fields, handling potential missing values
+        age = row.get('age', 'N/A')
+        gender = row.get('gender', 'N/A')
+        race_ethnicity = row.get('participant_race_ethnicity', 'N/A') # Assuming this column name based on app.py
+        location = row.get('location_type', 'N/A')
+        state = row.get('state', 'N/A')
+        income = row.get('income_range_fpl', 'N/A')
+        insurance = row.get('participant_insurance', 'N/A') # Assuming this column name based on app.py
+        language = row.get('language', 'N/A')
+        participant_type = row.get('participant_type', 'N/A')
+
+        # Format metadata string
+        metadata_str = (
+            f"Participant Type: {participant_type}\n"
+            f"Age: {age}\n"
+            f"Gender: {gender}\n"
+            f"Race/Ethnicity: {race_ethnicity}\n"
+            f"Language: {language}\n"
+            f"Location: {location} ({state})\n"
+            f"Income (FPL): {income}\n"
+            f"Insurance: {insurance}"
+        )
+
+        # Format for the prompt, now including metadata
+        data_context_parts.append(
+            f"Source ID: [{source_id}]\n"
+            f"Participant: {participant}\n"
+            f"Metadata:\n{metadata_str}\n"
+            f"Excerpt: {excerpt}\n"
+        )
+        
         # Add the full row (as dict) to sources list
         sources_list.append(row.to_dict())
 
