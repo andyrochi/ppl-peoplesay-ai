@@ -134,14 +134,18 @@ st.sidebar.warning(
     """
 )
 
-# --- Add Tabbed Interface for Main App and "How It Works" ---
-tab_titles = ["Search", "About"]
-# tabs = st.tabs(tab_titles)
+st.markdown(
+    """
+    Welcome! This tool lets you ask questions about older adults' experiences and quickly surface insights from the [People Say qualitative dataset](https://thepeoplesay.org/data/explore?search=&filters=%5B%5D) using AI.
+    """
+)
 
-# with tabs[0]:
+st.page_link("pages/about.py", label="Learn more about this tool and its design philosophy", icon="ℹ️")
+
 # --- Main Input Area ---
 # default_query = "How do older adults from Tribal communities feel about their access to specialist care?"
 default_query = "How do older asians feel about their access to health care?"
+
 user_query = st.text_area( # Use text_area for potentially longer queries
     "Enter your question about older adults' experiences:",
     value=default_query,

@@ -13,4 +13,4 @@ try:
 except FileNotFoundError:
     st.error("about.md not found in docs/.")
 
-st.markdown("[⬅️ Back to Search](app.py)")
+st.page_link("app.py", label="⬅️ Back to Search", icon="🔎")

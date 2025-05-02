@@ -4,7 +4,7 @@ The **People Say AI Search Tool** is built to make qualitative research data mor
 
 ## Why This Tool?
 
-The **People Say dataset** is a meticulously curated qualitative resource developed by PPL researchers. It comprises nearly 2,400 units of qualitative data derived from over 100 hours of interviews with older adults, caregivers, and subject matter experts. Each data unit is enriched with detailed metadata and tagged using a comprehensive taxonomy of 108 topic and subtopic tags. This taxonomy was developed with reference to major longitudinal studies of American older adults, including:
+The [**People Say dataset**](https://thepeoplesay.org) is a meticulously curated qualitative resource developed by researchers at [Public Policy Lab (PPL)](https://www.publicpolicylab.org). It comprises nearly 2,400 units of qualitative data derived from over 100 hours of interviews with older adults, caregivers, and subject matter experts. Each data unit is enriched with detailed metadata and tagged using a comprehensive taxonomy of 108 topic and subtopic tags. This taxonomy was developed with reference to major longitudinal studies of American older adults, including:
 
 - The Health and Retirement Survey (HRS)  
 - Medicare Current Beneficiary Survey (MCBS)  
