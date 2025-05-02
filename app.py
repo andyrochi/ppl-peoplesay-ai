@@ -33,7 +33,7 @@ if not os.path.exists(config.DB_PATH) or os.path.getsize(config.DB_PATH) == 0:
 
 # --- Application Title ---
 st.title("🗣️ People Say AI Search Tool")
-st.caption("Query the People Say database using natural language.")
+st.caption("Explore older adults' experiences using AI-driven search and traceable summaries.")
 
 # --- Sidebar Configuration ---
 st.sidebar.page_link("app.py", label="People Say AI Search", icon="🔎")
