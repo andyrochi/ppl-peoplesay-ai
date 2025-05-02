@@ -181,54 +181,68 @@ if st.button("✨ Search Insights", disabled=button_disabled):
                 # --- Display Results ---
                 st.subheader("🔍 Search Results")
 
-                # Display Generated Summary
-                st.markdown("**AI Generated Summary:**")
-                if summary:
-                    # Use markdown for better formatting possibilities (like lists, bolding from LLM)
-                    st.markdown(summary)
-                else:
-                    # Handle cases where summary is None or an error message
-                    st.error("Could not retrieve or generate a summary.")
+                # Create a two-column layout
+                col1, col2 = st.columns([3, 2])  # Adjust ratio as needed (3:2 here)
 
-                st.divider() # Visual separator
+                # Left column: Summary
+                with col1:
+                    st.markdown("**AI Generated Summary:**")
+                    if summary:
+                        st.markdown(summary)
+                    else:
+                        st.error("Could not retrieve or generate a summary.")
 
-                # Display Sources if available
-                st.markdown("**Cited Sources:**")
-                if sources:
-                    # Iterate through the list of source dictionaries
-                    for i, source in enumerate(sources):
-                        # Use an expander for each source to keep the UI clean
-                        # Use participant name and maybe first few words of excerpt in title
-                        source_id = source.get('data_unit_title', f'Source {i+1}') # Fallback ID
-                        participant = source.get('participant_name', 'N/A')
-                        excerpt_preview = source.get('data_unit', '')[:75] + '...' # Preview
+                    # SQL query at the bottom of left column
+                    st.divider()
+                    st.markdown("**Generated Database Query:**")
+                    if sql_query:
+                        st.code(sql_query, language="sql")
+                    else:
+                        st.caption("SQL query could not be generated.")
 
-                        with st.expander(f"**[{source_id}]** - {participant} - *{excerpt_preview}*"):
-                            st.caption(f"Participant: {participant}")
-                            # Display the full excerpt (which is in data_unit)
-                            st.markdown(f"**Excerpt:**\n{source.get('data_unit', 'N/A')}")
+                # Right column: Citations
+                with col2:
+                    st.markdown("**Cited Sources:**")
+                    if sources:
+                        for i, source in enumerate(sources):
+                            source_id = source.get('data_unit_title', f'Source {i+1}')
+                            participant = source.get('participant_name', 'N/A')
+                            excerpt_preview = source.get('data_unit', '')[:50] + '...'
 
-                            # Optional: Display other relevant fields from the source dictionary if needed
-                            # e.g., st.caption(f"Age: {source.get('age', 'N/A')}")
-                            # e.g., st.caption(f"State: {source.get('state', 'N/A')}")
-
-                            # Add link if you have a URL field and selected it in SQL
-                            # if 'url' in source and source['url']:
-                            #    st.markdown(f"[Link to original context]({source['url']})", unsafe_allow_html=True)
-
-                elif summary and "No data found" not in summary and "Error:" not in summary:
-                     st.info("Summary generated, but source details are unavailable.")
-                else:
-                    st.info("No sources to display.") # If summary indicated no data or error
-
-                st.divider()
-
-                # Optional: Display the generated SQL for transparency/debugging
-                st.markdown("**Generated Database Query:**")
-                if sql_query:
-                    st.code(sql_query, language="sql")
-                else:
-                    st.caption("SQL query could not be generated.")
+                            with st.expander(f"**[{source_id}]**"):
+                                # Participant info section
+                                st.markdown(f"**Participant:** {participant}")
+                                
+                                # Demographic info
+                                demo_cols = st.columns(2)
+                                with demo_cols[0]:
+                                    st.caption(f"Age: {source.get('age', 'N/A')}")
+                                    st.caption(f"Gender: {source.get('gender', 'N/A')}")
+                                    st.caption(f"Race/Ethnicity: {source.get('participant_race_ethnicity', 'N/A')}")
+                                    st.caption(f"Language: {source.get('language', 'N/A')}")
+                                
+                                with demo_cols[1]:
+                                    st.caption(f"State: {source.get('state', 'N/A')}")
+                                    st.caption(f"Location Type: {source.get('location_type', 'N/A')}")
+                                    st.caption(f"Income Range: {source.get('income_range_fpl', 'N/A')}")
+                                    st.caption(f"Insurance: {source.get('participant_insurance', 'N/A')}")
+                                
+                                # Excerpt section
+                                st.markdown("**Excerpt:**")
+                                st.markdown(f"{source.get('data_unit', 'N/A')}")
+                                
+                                # Additional data (if available)
+                                if 'relevant_subtopics' in source:
+                                    st.caption(f"Subtopics: {source.get('relevant_subtopics', 'N/A')}")
+                                
+                                # Add link if available
+                                if 'profile_picture_url' in source and source['profile_picture_url']:
+                                    st.markdown(f"[View Profile]({source['profile_picture_url']})")
+                    
+                    elif summary and "No data found" not in summary and "Error:" not in summary:
+                        st.info("Summary generated, but source details are unavailable.")
+                    else:
+                        st.info("No sources to display.")
 
             except Exception as e:
                 # Catch any unexpected errors during the process

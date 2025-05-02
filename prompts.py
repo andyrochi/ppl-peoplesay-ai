@@ -92,7 +92,12 @@ We believe that effective policymaking listens to most-affected communities—bu
 **Task:**
 Generate ONLY the SQL query to retrieve the relevant data from the peoplesay.db SQLite database based on the user's question. Use the schema and unique values to ensure accuracy.
 - The main table is peoplesay.
-- **Select the following fields from the peoplesay table (aliased as p): `p.entry_id`, `p.data_unit`, `p.data_unit_title`, `p.participant_name`, `p.age`, `p.income_range_fpl`, `p.location_type`, `p.state`, `p.gender`, `p.participant_type`. These fields provide essential context for analysis.** You can select other relevant fields from p as well.
+- **Select the following fields from the peoplesay table (aliased as p): `p.entry_id`, `p.data_unit`, `p.data_unit_title`, `p.participant_name`, `p.age`, `p.income_range_fpl`, `p.location_type`, `p.state`, `p.gender`, `p.participant_type`, `p.language`. These fields provide essential context for analysis.** You can select other relevant fields from p as well.
+- **Always include race/ethnicity and insurance data by joining the appropriate tables and using GROUP_CONCAT:**
+  - `JOIN race_ethnicity_table re ON p.entry_id = re.entry_id`
+  - `JOIN insurance_table ins ON p.entry_id = ins.entry_id`
+  - `GROUP_CONCAT(DISTINCT re.race_ethnicity) AS participant_race_ethnicity`
+  - `GROUP_CONCAT(DISTINCT ins.insurance) AS participant_insurance`
 - If the query involves filtering by subtopics, topics, common topics, data types, insurance, race/ethnicity, language, or participant type, join the appropriate auxiliary tables (subtopics_table as st, topics_table as t, common_topics_table as ct, data_type_table as dt, insurance_table as it, race_ethnicity_table as re) with peoplesay using p.entry_id. Use the provided aliases.
 - Use LIKE for partial text matches on text fields (like subtopics, topics, etc.) if appropriate for the user query. Use exact matches (=) for categorical fields like race/ethnicity, language, or age ranges when the user specifies them clearly.
 - **If joining auxiliary tables that might result in multiple rows per `peoplesay` entry (like `subtopics_table`, `topics_table`, `common_topics_table`, `data_type_table`, `insurance_table`, `race_ethnicity_table`), you MUST prevent duplicate `peoplesay` rows and aggregate the information from the joined table.**
@@ -115,12 +120,16 @@ SELECT
     p.state,
     p.gender,
     p.participant_type,
+    p.language,
     GROUP_CONCAT(DISTINCT re.race_ethnicity) AS participant_race_ethnicity,
+    GROUP_CONCAT(DISTINCT ins.insurance) AS participant_insurance,
     GROUP_CONCAT(DISTINCT st.subtopics) AS relevant_subtopics
 FROM
     peoplesay p
 JOIN
     race_ethnicity_table re ON p.entry_id = re.entry_id
+JOIN
+    insurance_table ins ON p.entry_id = ins.entry_id
 JOIN
     subtopics_table st ON p.entry_id = st.entry_id
 WHERE
@@ -128,7 +137,7 @@ WHERE
     AND st.subtopics LIKE '%Specialist Care%'
     AND p.participant_type = 'Older Adult'
 GROUP BY
-    p.entry_id, p.data_unit, p.data_unit_title, p.participant_name, p.age, p.income_range_fpl, p.location_type, p.state, p.gender, p.participant_type;
+    p.entry_id, p.data_unit, p.data_unit_title, p.participant_name, p.age, p.income_range_fpl, p.location_type, p.state, p.gender, p.participant_type, p.language;
 """
 
 # --- Summary Generation Prompt ---
