@@ -134,123 +134,136 @@ st.sidebar.warning(
     """
 )
 
-# --- Main Input Area ---
-# default_query = "How do older adults from Tribal communities feel about their access to specialist care?"
-default_query = "How do older asians feel about their access to health care?"
-user_query = st.text_area( # Use text_area for potentially longer queries
-    "Enter your question about older adults' experiences:",
-    value=default_query,
-    height=100
-)
+# --- Add Tabbed Interface for Main App and "How It Works" ---
+tab_titles = ["Search", "About"]
+tabs = st.tabs(tab_titles)
 
-# --- Analysis Type Selection ---
-st.subheader("Analysis Type")
-selected_template = st.radio(
-    "Select analysis approach:",
-    options=list(prompts.SUMMARY_TEMPLATES.keys()),
-    index=0,  # Default to the first option
-    help="Choose the type of analysis to perform on the retrieved data."
-)
+with tabs[0]:
+    # --- Main Input Area ---
+    # default_query = "How do older adults from Tribal communities feel about their access to specialist care?"
+    default_query = "How do older asians feel about their access to health care?"
+    user_query = st.text_area( # Use text_area for potentially longer queries
+        "Enter your question about older adults' experiences:",
+        value=default_query,
+        height=100
+    )
 
-# Description of the selected template type
-template_descriptions = {
-    "Thematic Analysis": "Identifies recurring patterns, concepts, and themes across participants.",
-    "Narrative Analysis": "Focuses on storytelling elements and how participants construct their experiences.",
-    "Demographic Comparison": "Compares experiences across different demographic groups.",
-    "Policy Implications": "Extracts insights relevant to policy development and system improvements."
-}
+    # --- Analysis Type Selection ---
+    st.subheader("Analysis Type")
+    selected_template = st.radio(
+        "Select analysis approach:",
+        options=list(prompts.SUMMARY_TEMPLATES.keys()),
+        index=0,  # Default to the first option
+        help="Choose the type of analysis to perform on the retrieved data."
+    )
 
-st.caption(template_descriptions.get(selected_template, ""))
+    # Description of the selected template type
+    template_descriptions = {
+        "Thematic Analysis": "Identifies recurring patterns, concepts, and themes across participants.",
+        "Narrative Analysis": "Focuses on storytelling elements and how participants construct their experiences.",
+        "Demographic Comparison": "Compares experiences across different demographic groups.",
+        "Policy Implications": "Extracts insights relevant to policy development and system improvements."
+    }
 
-# --- Search Button and Processing Logic ---
-# Only enable the button if we have a VALID API key
-button_disabled = not (st.session_state.api_key and st.session_state.get('api_key_valid', False))
-if st.button("✨ Search Insights", disabled=button_disabled):
-    if user_query:
-        logging.info(f"Search button clicked with query: {user_query}")
-        # Show a spinner while processing
-        with st.spinner("🧠 Thinking... Generating SQL, querying DB, and summarizing..."):
-            try:
-                # Call the core logic function to handle the entire process
-                summary, sources, sql_query = core_logic.process_query(
-                    user_query,
-                    template_key=selected_template,
-                    api_key=st.session_state.api_key
-                )
+    st.caption(template_descriptions.get(selected_template, ""))
 
-                # --- Display Results ---
-                st.subheader("🔍 Search Results")
+    # --- Search Button and Processing Logic ---
+    # Only enable the button if we have a VALID API key
+    button_disabled = not (st.session_state.api_key and st.session_state.get('api_key_valid', False))
+    if st.button("✨ Search Insights", disabled=button_disabled):
+        if user_query:
+            logging.info(f"Search button clicked with query: {user_query}")
+            # Show a spinner while processing
+            with st.spinner("🧠 Thinking... Generating SQL, querying DB, and summarizing..."):
+                try:
+                    # Call the core logic function to handle the entire process
+                    summary, sources, sql_query = core_logic.process_query(
+                        user_query,
+                        template_key=selected_template,
+                        api_key=st.session_state.api_key
+                    )
 
-                # Create a two-column layout
-                col1, col2 = st.columns([3, 2])  # Adjust ratio as needed (3:2 here)
+                    # --- Display Results ---
+                    st.subheader("🔍 Search Results")
 
-                # Left column: Summary
-                with col1:
-                    st.markdown("**AI Generated Summary:**")
-                    if summary:
-                        st.markdown(summary)
-                    else:
-                        st.error("Could not retrieve or generate a summary.")
+                    # Create a two-column layout
+                    col1, col2 = st.columns([3, 2])  # Adjust ratio as needed (3:2 here)
 
-                    # SQL query at the bottom of left column
-                    st.divider()
-                    st.markdown("**Generated Database Query:**")
-                    if sql_query:
-                        st.code(sql_query, language="sql")
-                    else:
-                        st.caption("SQL query could not be generated.")
+                    # Left column: Summary
+                    with col1:
+                        st.markdown("**AI Generated Summary:**")
+                        if summary:
+                            st.markdown(summary)
+                        else:
+                            st.error("Could not retrieve or generate a summary.")
 
-                # Right column: Citations
-                with col2:
-                    st.markdown("**Cited Sources:**")
-                    if sources:
-                        for i, source in enumerate(sources):
-                            source_id = source.get('data_unit_title', f'Source {i+1}')
-                            participant = source.get('participant_name', 'N/A')
-                            excerpt_preview = source.get('data_unit', '')[:50] + '...'
+                        # SQL query at the bottom of left column
+                        st.divider()
+                        st.markdown("**Generated Database Query:**")
+                        if sql_query:
+                            st.code(sql_query, language="sql")
+                        else:
+                            st.caption("SQL query could not be generated.")
 
-                            with st.expander(f"**[{source_id}]**"):
-                                # Participant info section
-                                st.markdown(f"**Participant:** {participant}")
-                                
-                                # Demographic info
-                                demo_cols = st.columns(2)
-                                with demo_cols[0]:
-                                    st.caption(f"Age: {source.get('age', 'N/A')}")
-                                    st.caption(f"Gender: {source.get('gender', 'N/A')}")
-                                    st.caption(f"Race/Ethnicity: {source.get('participant_race_ethnicity', 'N/A')}")
-                                    st.caption(f"Language: {source.get('language', 'N/A')}")
-                                
-                                with demo_cols[1]:
-                                    st.caption(f"State: {source.get('state', 'N/A')}")
-                                    st.caption(f"Location Type: {source.get('location_type', 'N/A')}")
-                                    st.caption(f"Income Range: {source.get('income_range_fpl', 'N/A')}")
-                                    st.caption(f"Insurance: {source.get('participant_insurance', 'N/A')}")
-                                
-                                # Excerpt section
-                                st.markdown("**Excerpt:**")
-                                st.markdown(f"{source.get('data_unit', 'N/A')}")
-                                
-                                # Additional data (if available)
-                                if 'relevant_subtopics' in source:
-                                    st.caption(f"Subtopics: {source.get('relevant_subtopics', 'N/A')}")
-                                
-                                # Add link if available
-                                if 'profile_picture_url' in source and source['profile_picture_url']:
-                                    st.markdown(f"[View Profile]({source['profile_picture_url']})")
-                    
-                    elif summary and "No data found" not in summary and "Error:" not in summary:
-                        st.info("Summary generated, but source details are unavailable.")
-                    else:
-                        st.info("No sources to display.")
+                    # Right column: Citations
+                    with col2:
+                        st.markdown("**Cited Sources:**")
+                        if sources:
+                            for i, source in enumerate(sources):
+                                source_id = source.get('data_unit_title', f'Source {i+1}')
+                                participant = source.get('participant_name', 'N/A')
+                                excerpt_preview = source.get('data_unit', '')[:50] + '...'
 
-            except Exception as e:
-                # Catch any unexpected errors during the process
-                logging.error(f"An unexpected error occurred in the Streamlit app: {e}", exc_info=True)
-                st.error(f"An unexpected error occurred: {e}")
+                                with st.expander(f"**[{source_id}]**"):
+                                    # Participant info section
+                                    st.markdown(f"**Participant:** {participant}")
+                                    
+                                    # Demographic info
+                                    demo_cols = st.columns(2)
+                                    with demo_cols[0]:
+                                        st.caption(f"Age: {source.get('age', 'N/A')}")
+                                        st.caption(f"Gender: {source.get('gender', 'N/A')}")
+                                        st.caption(f"Race/Ethnicity: {source.get('participant_race_ethnicity', 'N/A')}")
+                                        st.caption(f"Language: {source.get('language', 'N/A')}")
+                                    
+                                    with demo_cols[1]:
+                                        st.caption(f"State: {source.get('state', 'N/A')}")
+                                        st.caption(f"Location Type: {source.get('location_type', 'N/A')}")
+                                        st.caption(f"Income Range: {source.get('income_range_fpl', 'N/A')}")
+                                        st.caption(f"Insurance: {source.get('participant_insurance', 'N/A')}")
+                                    
+                                    # Excerpt section
+                                    st.markdown("**Excerpt:**")
+                                    st.markdown(f"{source.get('data_unit', 'N/A')}")
+                                    
+                                    # Additional data (if available)
+                                    if 'relevant_subtopics' in source:
+                                        st.caption(f"Subtopics: {source.get('relevant_subtopics', 'N/A')}")
+                                    
+                                    # Add link if available
+                                    if 'profile_picture_url' in source and source['profile_picture_url']:
+                                        st.markdown(f"[View Profile]({source['profile_picture_url']})")
+                        
+                        elif summary and "No data found" not in summary and "Error:" not in summary:
+                            st.info("Summary generated, but source details are unavailable.")
+                        else:
+                            st.info("No sources to display.")
 
-    else:
-        # If the search button is clicked with no query
-        st.warning("Please enter a question before searching.")
-        logging.warning("Search button clicked without a user query.")
+                except Exception as e:
+                    # Catch any unexpected errors during the process
+                    logging.error(f"An unexpected error occurred in the Streamlit app: {e}", exc_info=True)
+                    st.error(f"An unexpected error occurred: {e}")
+
+        else:
+            # If the search button is clicked with no query
+            st.warning("Please enter a question before searching.")
+            logging.warning("Search button clicked without a user query.")
+
+with tabs[1]:
+    about_path = os.path.join(os.path.dirname(__file__), "docs", "about.md")
+    try:
+        with open(about_path, "r") as f:
+            st.markdown(f.read())
+    except FileNotFoundError:
+        st.error("about.md not found. Please add documentation in the docs/ folder.")
 
