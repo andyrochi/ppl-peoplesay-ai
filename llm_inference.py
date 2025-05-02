@@ -62,12 +62,14 @@ def configure_genai(api_key=None):
         return False
 
 # --- SQL Generation ---
-def generate_sql_from_query(user_query: str, api_key=None) -> str | None:
+def generate_sql_from_query(user_query: str, api_key=None, model_name=None) -> str | None:
     """
     Generates an SQL query from a natural language user query using the configured LLM.
 
     Args:
         user_query (str): The natural language question from the user.
+        api_key (str, optional): The API key to use.
+        model_name (str, optional): The name of the model to use.
 
     Returns:
         str | None: The generated SQL query string, or None if generation fails or
@@ -87,8 +89,9 @@ def generate_sql_from_query(user_query: str, api_key=None) -> str | None:
 
     try:
         # Initialize the specific model for SQL generation
-        model = genai.GenerativeModel(config.SQL_MODEL_NAME)
-        logging.info(f"Using model {config.SQL_MODEL_NAME} for SQL generation.")
+        model_to_use = model_name or config.SQL_MODEL_NAME
+        model = genai.GenerativeModel(model_to_use)
+        logging.info(f"Using model {model_to_use} for SQL generation.")
 
         # Format the prompt with the user's query
         prompt = prompts.SQL_GENERATION_PROMPT_TEMPLATE.format(user_query=user_query)
@@ -128,7 +131,7 @@ def generate_sql_from_query(user_query: str, api_key=None) -> str | None:
 # --- Summary Generation ---
 def generate_summary_from_data(user_query: str, retrieved_data_df: pd.DataFrame, 
                                template_key: str = "Thematic Analysis",
-                               api_key=None) -> tuple[str | None, list | None]:
+                               api_key=None, model_name=None) -> tuple[str | None, list | None]:
     """
     Generates a summary from the retrieved data DataFrame using the configured LLM.
 
@@ -225,8 +228,9 @@ def generate_summary_from_data(user_query: str, retrieved_data_df: pd.DataFrame,
 
     try:
         # Initialize the specific model for summarization
-        model = genai.GenerativeModel(config.SUMMARY_MODEL_NAME)
-        logging.info(f"Using model {config.SUMMARY_MODEL_NAME} for summarization with {template_key} template.")
+        model_to_use = model_name or config.SUMMARY_MODEL_NAME
+        model = genai.GenerativeModel(model_to_use)
+        logging.info(f"Using model {model_to_use} for summarization with {template_key} template.")
 
         # Get the appropriate template
         template = prompts.SUMMARY_TEMPLATES.get(template_key, prompts.DEFAULT_SUMMARY_TEMPLATE)

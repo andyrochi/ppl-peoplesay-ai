@@ -24,8 +24,20 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 # Specify the Google Generative AI models to use
 # You can experiment with different models available via the API
 # e.g., "models/gemini-1.5-pro", "models/gemini-1.0-pro"
-SQL_MODEL_NAME = "models/gemini-1.5-flash" # Model for generating SQL
-SUMMARY_MODEL_NAME = "models/gemini-1.5-flash" # Model for generating summaries
+
+# Model options with descriptions
+AVAILABLE_MODELS = {
+    "models/gemini-2.5-flash-preview-04-17": "Most intelligent (Gemini 2.5 Flash)",
+    "models/gemini-2.0-flash": "Balanced (Gemini 2.0 Flash)",
+    "models/gemini-1.5-flash": "Fastest (Gemini 1.5 Flash)"
+}
+
+# Default model
+DEFAULT_MODEL = "models/gemini-2.5-flash-preview-04-17"
+
+# Replace individual model definitions with the default
+SQL_MODEL_NAME = DEFAULT_MODEL
+SUMMARY_MODEL_NAME = DEFAULT_MODEL
 
 # --- Input Validation ---
 # No need to print a warning here as we'll handle this in the UI

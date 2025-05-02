@@ -104,6 +104,27 @@ else:
         st.session_state.api_key_valid = False
         st.sidebar.error("⚠️ Please enter a Google API Key to use this application")
 
+# Add this after the API key configuration in sidebar
+# --- Model Selection in Sidebar ---
+st.sidebar.header("Model Selection")
+    
+# Initialize model selection in session state if not present
+if 'selected_model' not in st.session_state:
+    st.session_state.selected_model = config.DEFAULT_MODEL
+
+# Create dropdown for model selection
+selected_model = st.sidebar.selectbox(
+    "Select AI model:",
+    options=list(config.AVAILABLE_MODELS.keys()),
+    format_func=lambda x: config.AVAILABLE_MODELS[x],
+    index=list(config.AVAILABLE_MODELS.keys()).index(st.session_state.selected_model),
+    help="Choose which Gemini model to use. More intelligent models may produce better results but could be slower."
+)
+
+# Update session state if selection changes
+if selected_model != st.session_state.selected_model:
+    st.session_state.selected_model = selected_model
+
 # For debugging - display current validation state (can remove later)
 # st.sidebar.text(f"API key valid: {st.session_state.get('api_key_valid', False)}")
 
@@ -183,7 +204,8 @@ if st.button("✨ Search Insights", disabled=button_disabled):
                 summary, sources, sql_query = core_logic.process_query(
                     user_query,
                     template_key=selected_template,
-                    api_key=st.session_state.api_key
+                    api_key=st.session_state.api_key,
+                    model_name=st.session_state.selected_model
                 )
 
                 # --- Display Results ---
