@@ -255,8 +255,9 @@ Instructions:
 1. Identify similarities and differences based on age, race/ethnicity, location type, etc.
 2. Note unique challenges or opportunities mentioned by specific groups
 3. Avoid overgeneralizing from limited data
-4. Cite sources using [Source ID] format for all information
+4. **Cite Sources**: Cite sources using [Source ID] format for all information
 5. Organize findings by demographic variable or by theme, whichever provides clearer patterns
+6. Avoid interpretation beyond the data. If the data is insufficient to support a claim, state that clearly.
 
 Retrieved Data Excerpts:
 ---
@@ -277,8 +278,8 @@ Instructions:
 1. Identify system gaps, barriers, and challenges mentioned by participants
 2. Note participant suggestions for improvement
 3. Connect participant experiences to existing policy contexts when evident
-4. Avoid making policy recommendations not directly supported by the data
-5. Cite sources using [Source ID] format for all information
+4. Avoid making policy recommendations not directly supported by the data. Do not make claims unsupported by the provided excerpts.
+5. **Cite Sources**: Use the format [Source ID] for all information, where Source ID is the data_unit_title.
 
 Retrieved Data Excerpts:
 ---
